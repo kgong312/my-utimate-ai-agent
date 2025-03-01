@@ -1,0 +1,609 @@
+{
+  "name": "My Ultimate Agent (best version) copy",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -580,
+        40
+      ],
+      "id": "11ae96ba-36f8-4101-aeab-2f06635b2b04",
+      "name": "Telegram Trigger",
+      "webhookId": "a70b1909-0f60-4c01-8dad-72a36c1c458d",
+      "notesInFlow": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "Hjlh2CuZ3giA8QQh",
+          "name": "Telegram account"
+        }
+      },
+      "notes": "Voice/Text Activate flow"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "{{ $json.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        60,
+        440
+      ],
+      "id": "3ca64898-e91b-4765-87e4-ccb8cbcacffe",
+      "name": "Window Buffer Memory"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        80
+      ],
+      "id": "ac81cbcd-e85c-4aab-bfb2-4b053bf69778",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "8IhvMRPmjtkC5nWD",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.voice.file_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "625a5262-547c-437a-8ff5-4f0ae7d2d7a4"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "81107ea2-19af-4dee-92e6-df1fc72c5592",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -360,
+        40
+      ],
+      "id": "7d55f471-f2a5-4f77-a5cc-cc3cecce461a",
+      "name": "Switch",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text}}",
+        "options": {
+          "systemMessage": "=# **Role**  \nYou are an AI-powered Task Router responsible for assigning user queries to the correct tool.  \nYou do not execute tasks yourself—your role is to identify and route queries efficiently.  \n\n---\n\n# **Core Rules**  \n- **NEVER** perform tasks manually.  \n- **ALWAYS** route queries to the correct tool.  \n- **ENSURE** all required data is available before execution.  \n- **ASK** for missing details instead of assuming information.  \n\n---\n\n# **Available Tools**  \n- **emailAgent** → Send or draft emails.  \n- **calendarAgent** → Create, update, and delete calendar events.  \n- **contactAgent** → Retrieve, update, or add contacts.  \n- **contentCreator** → Generate blog posts or written content.  \n- **calculator** → Handle mathematical calculations and conversions.  \n- **weatherAgent** → Fetch current weather and forecasts.  \n- **tavilyPlaceAgent** → Retrieve location-based data and format results with Google Maps links.  \n- **tavilyGeneralAgent** → Retrieve general information for non-location-based queries.  \n\n---\n\n# **Query Routing Logic**  \n\n### **Email Handling**  \n1. Retrieve recipient’s email using `contactAgent`.  \n2. Pass the request to `emailAgent`.  \n3. Confirm successful email delivery.  \n\n---\n\n### **Calendar Event Handling**  \nEnsure every event includes:  \n- **Title** (Auto-generate if missing).  \n- **Date & Time**.  \n- **Duration**.  \n- **Attendees** (if applicable).  \nIf details are missing, ask the user before execution.  \n\n---\n\n### **Math & Weather Queries**  \n- **Math** → Extract equation and route to `calculator`.  \n- **Weather** → Extract location and route to `weatherAgent`.  \n\n\n---\n\n# **Web Search Routing Rules**  \nBefore routing a query to `tavilyGeneralAgent`, determine if the answer is **already known** using internal knowledge.  \n\n### **Use LLM (No Web Search) if Query Falls into These Categories:**  \n- General historical facts (e.g., \"Who was Nikola Tesla?\")  \n- Scientific or mathematical principles (e.g., \"What is Newton’s second law?\")  \n- Static lists (e.g., \"What are the 7 wonders of the world?\")  \n- Common knowledge topics (e.g., \"How many continents are there?\")  \n- Definitions and explanations (e.g., \"What is machine learning?\")  \n\n### **Use Tavily General Agent if Query Falls into These Categories:**  \n- **Current events** (e.g., \"Latest AI breakthroughs in 2024\")  \n- **Trending topics** (e.g., \"Who won the Grammy Awards 2025?\")  \n- **Market trends** (e.g., \"Stock market forecast for 2025\")  \n- **Live rankings** (e.g., \"Top 10 bestselling books right now\")  \n- **Company, product, or service details** (e.g., \"What are the features of the latest iPhone?\")  \n- **Specific statistics or evolving data** (e.g., \"Global CO2 levels in 2024\")  \n\n---\n\n# **Decision Logic for Web Search:**  \n1. If the query **falls into LLM Knowledge categories**, answer **without using Tavily**.  \n2. If the query **requires current or externally validated information**, route to `tavilyGeneralAgent`.  \n3. If **unsure**, assume web search is needed and use `tavilyGeneralAgent`.  \n\n---\n\n# **Tavily Search Routing**  \nUse **Tavily Place Agent** for **location-based** searches, and **Tavily General Agent** for **all other searches**.  \n\n### **Tavily Place Agent (Location-Based Searches)**  \nRoute queries to `tavilyPlaceAgent` if they involve a **physical location**, such as:  \n- **Restaurants & Food** → `\"Best sushi spots in Tokyo\"`  \n- **Hotels & Lodging** → `\"Top-rated hotels in Paris\"`  \n- **Parks & Outdoor Spaces** → `\"Best national parks in the USA\"`  \n- **Landmarks & Historical Sites** → `\"Famous landmarks in Rome\"`  \n- **Tourist Attractions** → `\"Must-visit places in Thailand\"`  \n- **Venues & Event Spaces** → `\"Best concert venues in LA\"`  \n- **Museums & Galleries** → `\"Art museums in London\"`  \n- **Stores & Shopping Centers** → `\"Luxury shopping malls in Dubai\"`  \n- **Nightlife & Bars** → `\"Popular rooftop bars in NYC\"`  \n\n---\n\n### **Tavily General Agent (Non-Location-Based Searches)**  \nRoute queries to `tavilyGeneralAgent` if they are **not** location-based, such as:  \n- **News Updates** → `\"Latest AI breakthroughs in 2024\"`  \n- **Rankings & Lists** → `\"Top 10 bestselling books of 2024\"`  \n- **Factual Inquiries** → `\"Who discovered quantum physics?\"`  \n- **Market Trends** → `\"Stock market forecast for 2025\"`  \n- **Entertainment Searches** → `\"Most streamed artists on Spotify in 2024\"`  \n  \n\n\n# **Memory Handling**  \n1. **Check short-term memory** (Window Buffer Memory).  \n2. If no relevant context is found, **search long-term memory** (Pinecone).  \n3. If still no data is found, **use Tavily for external search**.  \n\n---\n\n# **Final Execution Rules**  \n- **Route every request to the correct tool.**  \n- **NEVER execute tasks yourself.**  \n- **Ensure all required data is available before running a tool.**  \n- **Ask for clarification if any details are missing\n\nCurrent Date/Time: {{ $now }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        380,
+        -80
+      ],
+      "id": "194544d9-f1bb-4c6b-af7e-829a5b5cd667",
+      "name": "ULTIMATE AI",
+      "notesInFlow": false,
+      "notes": "Agent that calls upon other agents to complete a task."
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger').item.json.message.voice.file_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -180,
+        -220
+      ],
+      "id": "0cb1b189-02cd-4c20-9c54-82a3c0a7affb",
+      "name": "Telegram",
+      "webhookId": "4ef848d7-089f-4af6-a3af-728e60951de9",
+      "credentials": {
+        "telegramApi": {
+          "id": "Hjlh2CuZ3giA8QQh",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e280bf0f-2ee9-4a57-b0e3-7c0adc4f4a3a",
+              "name": "text",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -100,
+        140
+      ],
+      "id": "75de4ec2-f7cf-4c8e-9439-77c485f7f0c3",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        40,
+        -220
+      ],
+      "id": "e2314bf2-7faa-4ad9-adb5-06a1d2ebfc9b",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "8IhvMRPmjtkC5nWD",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6964064368",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        840,
+        -80
+      ],
+      "id": "c7c0f593-773e-4652-9d1e-d7bedc9aad83",
+      "name": "Telegram1",
+      "webhookId": "a6c8ef77-0d61-4e86-8fc4-fa68d00ccacb",
+      "credentials": {
+        "telegramApi": {
+          "id": "Hjlh2CuZ3giA8QQh",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "emailAgent",
+        "description": "Call this tool to take action in email",
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "R60DFeLr17naOKUs",
+          "cachedResultName": "Email Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        200,
+        440
+      ],
+      "id": "e658b097-93d1-4649-8c8e-094ad7f75989",
+      "name": "emailAgent",
+      "notesInFlow": false,
+      "notes": "Agent that handles emails"
+    },
+    {
+      "parameters": {
+        "name": "calendarAgent",
+        "description": "Call this tool to take action in calendar.",
+        "workflowId": {
+          "__rl": true,
+          "value": "KEsog6qwiLytYFZe",
+          "mode": "list",
+          "cachedResultName": "Calendar Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        340,
+        440
+      ],
+      "id": "68d9d5d5-648f-4582-bfd2-d2c0d7eb83c6",
+      "name": "calendarAgent",
+      "notesInFlow": false,
+      "notes": "Agent that handles calendar requests\n"
+    },
+    {
+      "parameters": {
+        "name": "contactAgent",
+        "description": "Call this tool to take action in Contact.",
+        "workflowId": {
+          "__rl": true,
+          "value": "3ry1gICuu795d86X",
+          "mode": "list",
+          "cachedResultName": "Contact Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        480,
+        440
+      ],
+      "id": "fc48f4a6-8978-4c60-a283-1e3f3e28bfb3",
+      "name": "contactAgent",
+      "notesInFlow": false,
+      "notes": "Agent that handles your contacts"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        600,
+        440
+      ],
+      "id": "75688f23-02cb-4b4f-8a8f-170b8fef79de",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {
+        "format": "imperial",
+        "cityName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('City', ``, 'string') }}",
+        "language": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Language', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.openWeatherMapTool",
+      "typeVersion": 1,
+      "position": [
+        720,
+        440
+      ],
+      "id": "9434cc4b-2c69-4a5e-8be2-5b48b6f5c68a",
+      "name": "weatherAgent",
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "2nVlsbAdpptUkjnT",
+          "name": "OpenWeatherMap account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "tavilyplaceAgent",
+        "description": "Call this tool when need to search the web using tavily for a place.",
+        "workflowId": {
+          "__rl": true,
+          "value": "eB6FyEHbjYD6NAi2",
+          "mode": "list",
+          "cachedResultName": "Tavily Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        900,
+        440
+      ],
+      "id": "ab9cc4a2-f3d3-4b7a-8ff7-6c232e18f588",
+      "name": "tavilyplaceAgent"
+    },
+    {
+      "parameters": {
+        "name": "tavilygeneralAgent",
+        "description": "Call this tool when searching for non-place-related inquires using Tavily.",
+        "workflowId": {
+          "__rl": true,
+          "value": "kYxqtTvCJflkSdFb",
+          "mode": "list",
+          "cachedResultName": "Tavily General Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        1060,
+        440
+      ],
+      "id": "9d6795b6-1339-4e75-9ec6-83a864fe0c0f",
+      "name": "tavilygeneralAgent"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "ULTIMATE AI",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "ULTIMATE AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "ULTIMATE AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "ULTIMATE AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ULTIMATE AI": {
+      "main": [
+        [
+          {
+            "node": "Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "emailAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "ULTIMATE AI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "calendarAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "ULTIMATE AI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "contactAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "ULTIMATE AI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "ULTIMATE AI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "weatherAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "ULTIMATE AI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tavilyplaceAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "ULTIMATE AI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tavilygeneralAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "ULTIMATE AI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a8656192-a1df-4f79-88d4-e0fcff9b7b51",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2a611847137acbf6738021a72141207ced00314ca8e416b8a827113af82dc230"
+  },
+  "id": "7bWGUjc1TcGusGJa",
+  "tags": []
+}

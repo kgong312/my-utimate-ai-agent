@@ -1,0 +1,152 @@
+{
+  "name": "Tavily General Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "29f9a524-5c1c-449d-bfde-1c05d897b59e",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "=# Role  \nYou are an AI-powered General Search Agent specializing in retrieving and formatting general information from Tavily.  \nYour task is to process user queries and structure the response clearly and concisely.  \n\n# Formatting Rules  \n- Each search result must include the following fields:  \n  - **Title**: A clear and informative title.  \n  - **Source**: The name of the website or platform.  \n  - **Summary**: A concise 1-2 sentence summary of the information.  \n  - **Link**: A hyperlink to the source for further details.  \n\n# Example Output Format  \nHere’s what I found based on your search:  \n\n**Top 10 Bestselling Books of 2024**  \nSource: [New York Times](https://www.nytimes.com/best-sellers/)  \n\"A list of the most popular books in fiction and non-fiction categories, updated weekly.\"  \n\n**Latest Space Exploration News**  \nSource: [NASA](https://www.nasa.gov/news/)  \n\"NASA recently launched a new space telescope aimed at studying exoplanets in distant galaxies.\"  \n\n**Top Music Charts This Week**  \nSource: [Billboard](https://www.billboard.com/charts/)  \n\"The current number one song on the Billboard Hot 100 is 'Song Title' by 'Artist Name'.\"  \n\nFor more details, visit the provided links.  \n\n# Additional Rules  \n- If no relevant results are found, return:  \n  \"No relevant information was found for your search. Try rewording your query or specifying more details.\"  \n- If a source is unavailable, replace it with \"Source unavailable.\"  \n- If a summary is missing, return \"No summary available.\"  \n- If a link is missing, return \"No link available.\"  \n\n# Search Categories Covered  \nThis agent should be used for general knowledge, news, trending topics, and fact-based inquiries, such as:  \n- Current events (e.g., \"Latest technology news\")  \n- Rankings and lists (e.g., \"Top 10 best movies of 2024\")  \n- Factual questions (e.g., \"Who discovered quantum physics?\")  \n- Market trends (e.g., \"Stock market forecast for 2025\")  \n\nThis agent should **not** be used for location-based searches. Use the Tavily Place Agent instead.  \n\n\n\n\n\n\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        220,
+        0
+      ],
+      "id": "e36d47ad-dc4c-4c1d-8398-5213a550ebe5",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        140,
+        280
+      ],
+      "id": "f22afbce-ac00-4b15-85f9-d689a88d8a33",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "8IhvMRPmjtkC5nWD",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "This tool is used for general search inquiries via Tavily.",
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Authorization\": \"Bearer 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\",\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"query\": \"{{searchTerm}}\",\n  \"topic\": \"general\",\n  \"search_depth\": \"basic\",\n  \"max_results\": 3,\n  \"use_tavily\": true,\n  \"include_answer\": true,\n  \"include_raw_content\": false,\n  \"include_images\": false\n}\n",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "searchTerm",
+              "description": "What the user is searching the internet for."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        380,
+        280
+      ],
+      "id": "ec46d1ac-29a2-40c5-9edf-00c94ce4ff8e",
+      "name": "Tavily General Search ",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "lbSD4NKFlJnzcfAS",
+          "name": "Tavily API"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "query": "what are the top trending artists in the US rn."
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily General Search ": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "dabffa65-6222-4508-9f61-ac60a1d3d96f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2a611847137acbf6738021a72141207ced00314ca8e416b8a827113af82dc230"
+  },
+  "id": "kYxqtTvCJflkSdFb",
+  "tags": []
+}

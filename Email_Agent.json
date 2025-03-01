@@ -1,0 +1,382 @@
+{
+  "name": "Email Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -380,
+        -20
+      ],
+      "id": "2f7cf41a-7d17-49b3-ad6d-f6eef12f1810",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "=<system_prompt>\nYOU ARE A GMAIL AUTOMATION AGENT RESPONSIBLE FOR FORMATTING EMAILS IN HTML AND ENSURING THEY ARE ALWAYS SIGNED OFF WITH \"Kevin G.\"\n\n### INSTRUCTIONS ###\n\n- AUTOMATICALLY CONVERT THE EMAIL BODY INTO PROPERLY FORMATTED HTML.  \n- ENSURE THAT EVERY EMAIL ENDS WITH THE SIGN-OFF:  \n<br><br>\nBest regards,<br>\n<strong>Kevin G</strong>\n\nmarkdown\nCopy\nEdit\n- IF THE EMAIL ALREADY CONTAINS \"Kevin G\" AS A SIGN-OFF, LEAVE IT UNCHANGED.  \n- PRESERVE ALL EXISTING FORMATTING, LINE BREAKS, AND STYLING.  \n- OPERATE SILENTLY WITHOUT ASKING FOR CONFIRMATION OR USER INPUT.  \n\n### CHAIN OF THOUGHT ###\n\n1. **CHECK THE EMAIL BODY**:  \n - DETERMINE IF THE EMAIL ALREADY ENDS WITH \"Kevin G.\"  \n2. **CONVERT TO HTML**:  \n - ENSURE PROPER HTML TAGS ARE USED FOR PARAGRAPHS, LINE BREAKS, AND TEXT STYLING.  \n3. **APPEND SIGN-OFF**:  \n - IF MISSING, ADD THE FOLLOWING TO THE END:  \n   ```\n   <br><br>  \n   Best regards,<br>  \n   Kevin G\n   ```\n4. **FINAL VALIDATION**:  \n - ENSURE THE EMAIL REMAINS WELL-FORMATTED IN HTML.  \n5. **SEND EMAIL**:  \n - ALLOW THE EMAIL TO BE SENT AS USUAL WITH FORMATTED CONTENT.  \n\n### WHAT NOT TO DO ###\n\n- NEVER REMOVE OR ALTER THE USER'S TEXT EXCEPT TO APPLY HTML FORMATTING.  \n- NEVER ASK THE USER FOR CONFIRMATION BEFORE APPENDING \"Kevin G.\"  \n- NEVER LEAVE THE EMAIL IN PLAIN TEXT—ALWAYS ENSURE PROPER HTML FORMATTING.  \n- NEVER ADD EXTRA TEXT, PLACEHOLDERS, OR ALTER THE USER'S MESSAGE IN ANY WAY.  \n\n### EXAMPLES ###  \n\n**Example 1:**  \n_User Composes (Plain Text):_  \nHi Mark,\nLet’s meet at 3 PM.\n\nphp-template\nCopy\nEdit\n_Agent Action (Converted to HTML):_  \n```html\n<p>Hi Mark,</p>  \n<p>Let’s meet at 3 PM.</p>  \n<br><br>  \nBest regards,<br>  \nKevin G \nExample 2 (No Action Needed):\nUser Composes:\n\nhtml\nCopy\nEdit\n<p>Looking forward to our meeting.</p>  \n<br><br>  \nBest regards,<br>  \nKevin G \nAgent Action:\n\nNo changes, email is sent as is.\n\n</system_prompt>"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -160,
+        -20
+      ],
+      "id": "bf17b8c5-f51c-4ba2-b07b-9e2504f51392",
+      "name": "Email Agent",
+      "retryOnFail": false,
+      "executeOnce": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -280,
+        180
+      ],
+      "id": "8b89eec6-04ba-4f8a-a440-999dbdbd1f79",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "8IhvMRPmjtkC5nWD",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Kevin G"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -340,
+        440
+      ],
+      "id": "b822a37c-000d-4b6d-957f-46270c2c38fa",
+      "name": "Send Email",
+      "webhookId": "5526f81b-08ba-4976-a8bb-05b17224d591",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9ENtX886ZdMv3CoD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_ID', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -160,
+        440
+      ],
+      "id": "9518913e-0624-49a8-a524-919289fd2e11",
+      "name": "Email Reply",
+      "webhookId": "2eb070b0-80a0-4a38-be42-f469fc4160ed",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9ENtX886ZdMv3CoD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        20,
+        440
+      ],
+      "id": "d68030c7-0b15-4ae7-9e69-bb3e9cdb57e9",
+      "name": "Create Draft",
+      "webhookId": "466fceab-3f04-452a-817b-07e74bd4d4b6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9ENtX886ZdMv3CoD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}",
+        "simple": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Simplify', ``, 'boolean') }}",
+        "filters": {
+          "sender": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Sender', ``, 'string') }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        540,
+        440
+      ],
+      "id": "039f7593-4c64-4972-b5da-41997c5171af",
+      "name": "Get Emails",
+      "webhookId": "c74feb1e-ffcb-43c9-b130-056695fc647b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9ENtX886ZdMv3CoD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}"
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        200,
+        440
+      ],
+      "id": "5e28e537-6fd5-4e8f-bb37-8ee4fa35c4f1",
+      "name": "Get Labels",
+      "webhookId": "da783416-568c-4ff5-9eb0-adb44ec33c7b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9ENtX886ZdMv3CoD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsUnread",
+        "messageId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_ID', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        380,
+        440
+      ],
+      "id": "c74268da-b290-4d1c-96aa-721292383c22",
+      "name": "Mark Unread",
+      "webhookId": "d12a06da-8999-445d-b9e5-b8c85a69ac21",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9ENtX886ZdMv3CoD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "36240fbc-0f94-46de-a834-e91f64cabe72",
+              "name": "response",
+              "value": "Unable to perform task. Try again.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        260,
+        40
+      ],
+      "id": "b37199f3-8e76-4224-ac61-bef557962e7b",
+      "name": "Try Again"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8ad156e7-55fe-4097-8f51-e254cb9fec21",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        260,
+        -180
+      ],
+      "id": "13eaf171-aa0d-4237-955c-750fde3d38b3",
+      "name": "Success"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "query": "Can you send an email to kevin gong (keving312@gmail.com) asking to say hey what's up."
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Reply": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Draft": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Emails": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Labels": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Unread": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Agent": {
+      "main": [
+        [
+          {
+            "node": "Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Try Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Success": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1064e9ca-036e-4a1c-9c1d-df16e209a189",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2a611847137acbf6738021a72141207ced00314ca8e416b8a827113af82dc230"
+  },
+  "id": "R60DFeLr17naOKUs",
+  "tags": []
+}

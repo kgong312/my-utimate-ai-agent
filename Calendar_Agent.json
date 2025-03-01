@@ -1,0 +1,322 @@
+{
+  "name": "Calendar Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -360,
+        -160
+      ],
+      "id": "4975618a-e599-4f03-a5e5-71ab139284fb",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "=## System Prompt for n8n Workflow: Calendar Assistant  \n\n## Overview  \n- **YOU ARE** an AI-powered Calendar Assistant.  \n- Your responsibilities include **creating, retrieving, updating, and deleting events** in the user's calendar.  \n- You must handle event scheduling efficiently while ensuring accuracy and clarity.  \n\n## Calendar Management Tools  \n- **Create Event with Attendee** → Use this when an event includes participants.  \n- **Create Event** → Use this for solo events.  \n- **Get Events** → Fetch calendar schedules when requested.  \n- **Delete Event** → Remove an event from the calendar.  \n  - Before deletion, **use \"Get Events\"** to retrieve the event ID.  \n- **Update Event** → Modify an existing event.  \n  - Before updating, **use \"Get Events\"** to retrieve the event ID.  \n\n## Final Notes  \n- The current date/time is: **{{ $now }}**  \n- If no duration is specified for an event, **default to one hour**.  \n\n## Rules and Constraints  \n- **ENSURE** all event details are correctly processed.  \n- **IF any required information is missing**, prompt the user for clarification.  \n- **AVOID scheduling conflicts** unless explicitly instructed.  \n- **DO NOT create, update, or delete events without confirmation.**  \n\n## Expected Outputs  \n- **For event creation:** A confirmation message with event details.  \n- **For event retrieval:** A structured list of scheduled events.  \n- **For event deletion:** A confirmation message stating the event has been removed.  \n- **For event updates:** A summary of changes made.  \n\n## Outcome Expectations  \n- **ENSURE** smooth and accurate calendar management.  \n- **GUARANTEE** that events are scheduled with proper details.  \n- **AVOID** errors in event timing, duration, or participants.  \n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -140,
+        -160
+      ],
+      "id": "89c41de9-ca07-4e86-b3f8-3cd9e651cf2d",
+      "name": "Calendar Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -440,
+        100
+      ],
+      "id": "c0ae74c3-8fbb-4f3a-a2e5-5dcb12b6791d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "8IhvMRPmjtkC5nWD",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "=keving312@gmail.com\n",
+          "mode": "id"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "useDefaultReminders": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Use_Default_Reminders', ``, 'boolean') }}",
+        "additionalFields": {
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -180,
+        220
+      ],
+      "id": "e61c1c6d-88fe-4dc2-aedb-87cb63e1a89b",
+      "name": "Create Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "P9EoOynEzSqaiUqI",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "keving312@gmail.com",
+          "mode": "id"
+        },
+        "returnAll": true,
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -20,
+        220
+      ],
+      "id": "4e6f8e79-b04d-40b5-be37-c52fd87b85f1",
+      "name": "Get Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "P9EoOynEzSqaiUqI",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "=keving312@gmail.com\n",
+          "mode": "id"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        220
+      ],
+      "id": "3e570736-d654-41d8-8ebb-7045bbc0234c",
+      "name": "Delete Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "P9EoOynEzSqaiUqI",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "=keving312@gmail.com\n",
+          "mode": "id"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "useDefaultReminders": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Use_Default_Reminders', ``, 'boolean') }}",
+        "updateFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        220
+      ],
+      "id": "2dbb5658-6990-42a9-beee-bddbd88f36f1",
+      "name": "Update Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "P9EoOynEzSqaiUqI",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6deb867d-a40e-4a61-9d37-83dc7247f492",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        -300
+      ],
+      "id": "81df48a6-ab21-4c87-bded-c254bc7eedbf",
+      "name": "Success"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4a7bf052-a83a-4065-8a0e-6bfecc08e5d4",
+              "name": "response",
+              "value": "Unable to perform task. Try Again",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        -60
+      ],
+      "id": "6a1559a8-b2cc-42ad-8aeb-ed090e0117d9",
+      "name": "Try Again"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "query": "create an event to schedule a meeting with josh at 2pm next friday."
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar Agent": {
+      "main": [
+        [
+          {
+            "node": "Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Try Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "906eb7d0-615f-4d77-a96e-d97737b5a6df",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2a611847137acbf6738021a72141207ced00314ca8e416b8a827113af82dc230"
+  },
+  "id": "KEsog6qwiLytYFZe",
+  "tags": []
+}

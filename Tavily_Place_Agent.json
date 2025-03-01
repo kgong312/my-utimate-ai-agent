@@ -1,0 +1,155 @@
+{
+  "name": "Tavily Place Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "18d8b36a-41f8-4620-8295-e661206e0e03",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "=##Role\nYou are an AI-powered Place Search Agent specialized in retrieving and formatting location-based information.\nYour task is to format search results from Tavily in a structured way, ensuring clarity and ease of use.\n\n##Formatting Rules\n\nEach result must include:\n- **Name**: Displayed as a hyperlink to the Google Maps location.\n- **Rating**: If available, display in star format (e.g., 4.5 stars). If missing, return \"Rating not available.\"\n- **Price Range**: If available, display in dollar format (e.g., $50-$100). If missing, return \"Price not available.\"\n- **Description**: Provide a brief summary (1-2 sentences). If missing, return \"No description provided.\"\n- **Location**: Display city or relevant geographic details.\n\nIf rating or price is missing from the original data, attempt to infer it using available context. If not possible, return placeholders.\n\n\n##Example Output Format\nHere are some of the top places for your search:\n\n1️⃣ Casa Bella Restaurant\n⭐ 4.5 Stars\n🍽️ Italian cuisine with an elegant ambiance and authentic flavors.\n📍 Location: Little Italy, NYC\n💰 Price: $30-$50\n\n2️⃣ Warren Street Bar\n⭐ 4.6 Stars\n🍸 A trendy American bar in the heart of Tribeca.\n📍 Location: Tribeca, NYC\n💰 Price: $15-$25\n\nFor more details, visit the provided Google Maps links.\n\n- Each place must include a **Google Maps link**.  \n  - If a direct Google Maps link is unavailable, construct one using:  \n    `https://maps.google.com/?q=[PLACE_NAME]`\n  - Do NOT return links to OpenTable, Yelp, or general search pages.\n\n\n##Rules for Google Maps Link Formatting\nUse this format for hyperlinks:\n[Place Name](Google Maps URL)\nExample:\n\n✅ Correct: [Central Park](https://maps.google.com?q=Central+Park)\n❌ Incorrect: Central Park - Google Maps: https://maps.google.com?q=Central+Park\n\n\n\n##Additional Instructions\nIf a rating is not available, display \"Rating not available.\"\nIf a description is missing, return \"No description provided.\"\nIf a price point is missing, return \"Price not available.\"\nIf no results are found, return: \"No places found for your search.\"\nRestrictions\n\n⚠️ DO NOT generate fictional places.\n⚠️ DO NOT modify search results. Only structure the response.* "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        220,
+        0
+      ],
+      "id": "c77c2fbf-3acd-43ea-8d5c-f5a1b517a7e8",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        240
+      ],
+      "id": "b4e8aecd-c3a1-42ba-8e08-4618117b911a",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "8IhvMRPmjtkC5nWD",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "This toolis used for searching places via Tavily.",
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Authorization\": \"Bearer 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\",\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"query\": \"{{searchTerm}}\",\n  \"topic\": \"general\",\n  \"search_depth\": \"basic\",\n  \"max_results\": 3,\n  \"days\": 3,\n  \"include_answer\": true,\n  \"include_raw_content\": false,\n  \"include_images\": false,\n  \"include_image_descriptions\": false,\n  \"include_page_content\": true,\n  \"include_domains\": [\"opentable.com\", \"tripadvisor.com\", \"yelp.com\", \"maps.google.com\"],\n  \"exclude_domains\": [],\n}\n",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "searchTerm",
+              "description": "What the user is searching the internet for."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        360,
+        260
+      ],
+      "id": "e405b08e-103c-4902-9d51-3750947494c4",
+      "name": "Tavily Search",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "lbSD4NKFlJnzcfAS",
+          "name": "Tavily API"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "fb260ff8-11fd-48fd-b70c-32ca9508d4d4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2a611847137acbf6738021a72141207ced00314ca8e416b8a827113af82dc230"
+  },
+  "id": "eB6FyEHbjYD6NAi2",
+  "tags": []
+}
